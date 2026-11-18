@@ -14,7 +14,7 @@ Aplicación para investigar publicaciones y comparar precios en Facebook Marketp
 npm ci
 npm ci --prefix ui
 npm run build --prefix ui
-node --test tests/*.test.mjs ui/tests/*.test.mjs
+node --test tests/*.test.mjs ui/tests/*.test.mjs infra/tests/*.test.mjs
 ```
 
 El proyecto incluye `dist/` porque la imagen Docker sirve esos archivos directamente. Después de modificar el código de `ui/src/`, ejecuta el comando de compilación anterior para actualizar el paquete de la interfaz.

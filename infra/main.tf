@@ -32,10 +32,11 @@ resource "docker_volume" "facebook_profile" {
 }
 
 resource "docker_container" "browser" {
-  name     = var.browser_container_name
-  image    = var.browser_image
-  restart  = "unless-stopped"
-  shm_size = 512
+  name       = var.browser_container_name
+  image      = var.browser_image
+  restart    = "unless-stopped"
+  shm_size   = 512
+  depends_on = [terraform_data.container_guard]
 
   mounts {
     type   = "volume"
