@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { buildMarketplaceSearchUrl, validateItemUrl, parseListingText } from '../server/marketplace-utils.mjs';
+const u=new URL(buildMarketplaceSearchUrl({query:'apartamento',location:'Soacha',min:80000000,max:130000000}));
+assert.equal(u.hostname,'www.facebook.com');assert.equal(u.pathname,'/marketplace/search/');assert.equal(u.searchParams.get('query'),'apartamento Soacha');assert.equal(u.searchParams.get('maxPrice'),'130000000');
+assert.throws(()=>buildMarketplaceSearchUrl({query:'  ',location:'',min:0,max:1}),/búsqueda/i);
+assert.throws(()=>buildMarketplaceSearchUrl({query:'pc',min:100,max:2}),/mínimo/i);
+assert.equal(validateItemUrl('https://www.facebook.com/marketplace/item/123456/'),'https://www.facebook.com/marketplace/item/123456/');
+assert.throws(()=>validateItemUrl('https://facebook.com.evil.example/marketplace/item/123/'));
+assert.throws(()=>validateItemUrl('https://www.facebook.com/messages/'));
+assert.equal(parseListingText('Description\n2 habitaciones\nSeller information\nprivado'), '2 habitaciones');
+assert.equal(parseListingText('Description\ntexto\nMensajes privados sin límite'), '');
+console.log('Marketplace: validación y extracción correctas');

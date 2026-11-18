@@ -1,0 +1,13 @@
+const assert = require('node:assert/strict');
+const { buildSearchUrl } = require('../dist/search.js');
+const url = new URL(buildSearchUrl({query:'portátil gamer',location:'Soacha', min:'500000',max:'2500000'}));
+assert.equal(url.hostname,'www.facebook.com');
+assert.equal(url.searchParams.get('query'),'portátil gamer Soacha');
+assert.equal(url.searchParams.get('minPrice'),'500000');
+assert.equal(url.searchParams.get('maxPrice'),'2500000');
+assert.throws(()=>buildSearchUrl({query:'',location:'',min:'',max:''}), /búsqueda/i);
+assert.throws(()=>buildSearchUrl({query:'playstation',location:'',min:'200',max:'100'}), /mínimo/i);
+assert.throws(()=>buildSearchUrl({query:'playstation',location:'',min:'-1',max:''}), /precio/i);
+console.log('Búsqueda y validaciones correctas');
+const formatted = new URL(buildSearchUrl({query:'consola',location:'Bogotá',min:'500.000',max:'2.000.000'}));
+assert.equal(formatted.searchParams.get('maxPrice'),'2000000');

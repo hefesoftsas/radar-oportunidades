@@ -1,0 +1,5 @@
+docker_host     = "ssh://nas"
+credential_file = "/srv/radar/opencode.key"
+app_bind_ip     = "127.0.0.1"
+# secure_url is optional and should refer to an existing private network route.
+# secure_url = "https://radar.example.test/"

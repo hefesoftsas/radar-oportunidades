@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {safePublicUrl, extractBingResults, cleanText} from '../server/research.mjs';
+assert.equal(safePublicUrl('http://127.0.0.1:8096/'),false);
+assert.equal(safePublicUrl('https://facebook.com/marketplace/item/123'),true);
+assert.equal(safePublicUrl('https://facebook.com.evil.invalid/'),false);
+assert.equal(safePublicUrl('https://www.fincaraiz.com.co/a'),true);
+assert.equal(cleanText('<script>x</script><p>Casa &amp; lote</p>'),'Casa & lote');
+let r=extractBingResults('<rss><channel><item><title>Apartamento</title><link>https://www.fincaraiz.com.co/a</link><description>Venta</description></item></channel></rss>');
+assert.equal(r[0].title,'Apartamento');assert.equal(r[0].url,'https://www.fincaraiz.com.co/a');
+console.log('Investigación: validaciones correctas');

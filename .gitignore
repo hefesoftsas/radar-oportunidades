@@ -1,0 +1,23 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.sqlite
+*.sqlite-*
+*.db
+data/
+profile/
+.openai/
+.impeccable/
+.DS_Store
+
+# OpenTofu state and local variables may contain private infrastructure details.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+.tofu/

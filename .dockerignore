@@ -1,0 +1,11 @@
+.git
+.openai
+node_modules
+tests
+data
+
+ui
+infra
+.env
+.env.*
+*.tfstate*

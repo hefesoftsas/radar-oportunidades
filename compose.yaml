@@ -1,0 +1,27 @@
+services:
+  radar:
+    build: .
+    image: radar-oportunidades:agent
+    container_name: radar-oportunidades
+    restart: unless-stopped
+    ports:
+      - "${RADAR_LAN_IP:-127.0.0.1}:8096:8096"
+      - "127.0.0.1:8097:8097"
+    volumes:
+      - radar-data:/data
+      - ${RADAR_KEY_PATH:?Configura RADAR_KEY_PATH}:/run/secrets/opencode_key:ro
+    environment:
+      - RADAR_SECURE_URL=${RADAR_SECURE_URL:-}
+    depends_on:
+      - facebook-browser
+  facebook-browser:
+    build: ./browser
+    image: radar-facebook-browser:local
+    container_name: radar-facebook-browser
+    restart: unless-stopped
+    shm_size: 512mb
+    volumes:
+      - facebook-profile:/profile
+volumes:
+  radar-data:
+  facebook-profile:
