@@ -15,8 +15,10 @@ export async function focusBrowserSource(context,source){
 export async function fetchMercadoLibrePage(page,url,{signal}={}){
   validateMercadoLibrePage(url);signal?.throwIfAborted();
   const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});signal?.throwIfAborted();
-  const finalUrl=page.url();validateMercadoLibrePage(finalUrl);
+  validateMercadoLibrePage(page.url());
   if(response&&response.status()>=400)throw Error(`Mercado Libre no permitió consultar la página (${response.status()}). Revisa la conexión con tu cuenta.`);
+  await page.locator('.ui-search-layout__item').first().waitFor({state:'attached',timeout:10000}).catch(()=>{});signal?.throwIfAborted();
+  const finalUrl=page.url();validateMercadoLibrePage(finalUrl);
   const html=await page.content();if(html.length>5000000)throw Error('La página de Mercado Libre es demasiado grande.');
   return {url:finalUrl,html};
 }

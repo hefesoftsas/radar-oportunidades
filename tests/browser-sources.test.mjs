@@ -16,7 +16,8 @@ test('abre la fuente solicitada sin reemplazar la pestaña de Facebook', async (
 
 test('solo devuelve páginas permitidas y reconoce la verificación de Mercado Libre', async () => {
   let current='https://listado.mercadolibre.com.co/mac-mini';
-  const page={goto:async()=>{},url:()=>current,content:async()=>'<html>resultados</html>'};
+  let loaded=false;
+  const page={goto:async()=>{},url:()=>current,locator:()=>({first:()=>({waitFor:async()=>{loaded=true}})}),content:async()=>loaded?'<html>resultados</html>':'<html>cargando</html>'};
   assert.deepEqual(await fetchMercadoLibrePage(page,current),{url:current,html:'<html>resultados</html>'});
   current='https://www.mercadolibre.com.co/gz/account-verification';
   await assert.rejects(fetchMercadoLibrePage(page,'https://listado.mercadolibre.com.co/mac-mini'),/verific/i);
