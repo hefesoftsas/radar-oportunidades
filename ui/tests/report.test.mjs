@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {renderReport} from '../src/report.js';
+import {renderReport,extractHighlights} from '../src/report.js';
 
 function render(text) {
   const dom = new JSDOM('<main id="report"></main>', {url:'https://radar.test/'});
@@ -48,4 +48,24 @@ test('destaca enlaces de publicaciones y catálogo de Mercado Libre sin incluir 
  const {extractHighlights}=await import('../src/report.js');
  const root=render('### Mac mini\n\nhttps://articulo.mercadolibre.com.co/MCO-12345678-mac-mini-_JM\n\n### Catálogo\n\nhttps://www.mercadolibre.com.co/mac-mini/p/MCO123456\n\n### Búsqueda\n\nhttps://listado.mercadolibre.com.co/mac-mini');
  const links=extractHighlights(root);assert.equal(links.length,2);assert.equal(links[0].source,'Mercado Libre');assert.equal(links[1].source,'Mercado Libre');
+});
+
+test('encuentra todos los enlaces de listas y tablas sin depender de subtítulos', () => {
+ const list=Array.from({length:7},(_,i)=>`- Mac mini ${i}: https://www.facebook.com/marketplace/item/${100000+i}/`).join('\n');
+ const root=render(`## Resultados\n\n${list}\n\n| Producto | Enlace |\n|---|---|\n| Mac mini M2 | https://www.mercadolibre.com.co/modelo/p/MCO123456 |\n| Apartamento | https://www.fincaraiz.com.co/apartamento-en-venta-en-bogota/193481394 |\n\nhttps://www.facebook.com/marketplace/search/?query=mac\n\nhttps://www.facebook.com.evil.test/marketplace/item/111111/`);
+ const links=extractHighlights(root);assert.equal(links.length,9);assert.match(links[0].title,/Mac mini 0/);assert.match(links[7].title,/Mac mini M2/);assert.equal(links[8].source,'Finca Raíz');
+});
+
+test('convierte identificadores en enlaces solo si hay una dirección respaldada', () => {
+ const dom=new JSDOM('<main></main>',{url:'https://radar.test/'}),root=dom.window.document.querySelector('main');
+ renderReport(root,'## Mejores opciones\n\n- Primera: item 123456.\n- Segunda: item 789012.\n- Tercera: item 999999.\n\nFuente: https://www.facebook.com/marketplace/item/123456/',[
+   {text:'Revisando Marketplace: https://www.facebook.com/marketplace/item/789012/'},
+   {text:'Revisando Marketplace: https://facebook.com.evil.test/marketplace/item/999999/'}
+ ]);
+ const links=[...root.querySelectorAll('a')];assert.ok(links.some(a=>a.textContent==='item 123456'&&a.href==='https://www.facebook.com/marketplace/item/123456/'));assert.ok(links.some(a=>a.textContent==='item 789012'&&a.href==='https://www.facebook.com/marketplace/item/789012/'));assert.ok(!links.some(a=>a.textContent==='item 999999'));assert.match(root.textContent,/item 999999 \(enlace no disponible\)/);
+});
+
+test('completa rutas de catálogo de Mercado Libre sin modificar enlaces de otros sitios', () => {
+ const root=render('## Mercado Libre\n\nCatálogo /p/MCO123456 y [otro catálogo](/p/MCO987654).\n\n[Otro sitio](https://example.com/p/MCO543210)');
+ const links=[...root.querySelectorAll('a')];assert.ok(links.some(a=>a.href==='https://www.mercadolibre.com.co/p/MCO123456'));assert.ok(links.some(a=>a.href==='https://www.mercadolibre.com.co/p/MCO987654'));assert.ok(links.some(a=>a.href==='https://example.com/p/MCO543210'));
 });

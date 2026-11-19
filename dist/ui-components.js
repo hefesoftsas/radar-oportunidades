@@ -15802,8 +15802,79 @@ function Df() {
 }
 var Of = Df();
 // src/report.js
-function kf(e, t) {
-	let n = e.ownerDocument, r = Of(n.defaultView), i = Z.parse(String(t ?? ""), { gfm: !0 }), a = r.sanitize(i, {
+function kf(e) {
+	try {
+		let t = new URL(e);
+		if (t.protocol !== "https:" || t.username || t.password || t.port) return null;
+		if ([
+			"www.facebook.com",
+			"facebook.com",
+			"m.facebook.com"
+		].includes(t.hostname)) {
+			let e = t.pathname.match(/^\/marketplace\/item\/(\d+)\/?$/)?.[1];
+			return e ? {
+				source: "Facebook Marketplace",
+				kind: "publicacion",
+				id: e,
+				key: `facebook:${e}`,
+				url: t.href
+			} : null;
+		}
+		if (t.hostname === "mercadolibre.com.co" || t.hostname.endsWith(".mercadolibre.com.co")) {
+			let e = t.pathname.match(/\/p\/(MCO\d+)(?:\/|$)/i), n = t.pathname.match(/\/(MCO-?\d+)(?:[-_/]|$)/i);
+			if (!e && !n) return null;
+			let r = (e || n)[1].toUpperCase().replace("-", "");
+			return {
+				source: "Mercado Libre",
+				kind: e ? "catalogo" : "publicacion",
+				id: r,
+				key: `mercadolibre:${r}`,
+				url: t.href
+			};
+		}
+		if (t.hostname === "fincaraiz.com.co" || t.hostname.endsWith(".fincaraiz.com.co")) {
+			let e = t.pathname.match(/\/(\d{7,})\/?$/)?.[1];
+			return e ? {
+				source: "Finca Raíz",
+				kind: "publicacion",
+				id: e,
+				key: `fincaraiz:${e}`,
+				url: t.href
+			} : null;
+		}
+	} catch {}
+	return null;
+}
+function Af(e, t, n) {
+	let r = /* @__PURE__ */ new Map();
+	for (let t of e.querySelectorAll("a[href]")) {
+		let e = kf(t.href);
+		e?.source === "Facebook Marketplace" && r.set(e.id, e.url);
+	}
+	for (let e of Array.isArray(n) ? n : []) {
+		let t = String(e?.text || "").match(/^Revisando Marketplace:\s*(https:\/\/\S+)\s*$/i), n = t && kf(t[1]);
+		n?.source === "Facebook Marketplace" && r.set(n.id, n.url);
+	}
+	let i = t.createTreeWalker(e, t.defaultView.NodeFilter.SHOW_TEXT), a = [];
+	for (; i.nextNode();) {
+		let e = i.currentNode;
+		e.parentElement?.closest("a,code,pre") || a.push(e);
+	}
+	for (let e of a) {
+		let n = e.nodeValue, i = /\bitem\s*[#:]?\s*(\d{5,25})\b|(?<![\w/:])\/p\/MCO\d+\b/gi, a, o = 0, s = !1, c = t.createDocumentFragment();
+		for (; a = i.exec(n);) {
+			let e = a[1] ? r.get(a[1]) : "https://www.mercadolibre.com.co" + a[0];
+			if (c.append(t.createTextNode(n.slice(o, a.index))), e) {
+				let n = t.createElement("a");
+				n.href = e, n.textContent = a[0], n.target = "_blank", n.rel = "noopener noreferrer", c.append(n);
+			} else c.append(t.createTextNode(a[0] + " (enlace no disponible)"));
+			o = i.lastIndex, s = !0;
+		}
+		s && (c.append(t.createTextNode(n.slice(o))), e.replaceWith(c));
+	}
+}
+function jf(e, t, n = []) {
+	let r = e.ownerDocument, i = Of(r.defaultView), a = Z.parse(String(t ?? ""), { gfm: !0 }), o = i.sanitize(a, {
 		RETURN_DOM_FRAGMENT: !0,
 		ALLOWED_TAGS: [
 			"a",
@@ -15839,49 +15910,55 @@ function kf(e, t) {
 		],
 		ALLOW_DATA_ATTR: !1
 	});
-	for (let e of a.querySelectorAll("a[href]")) try {
-		let t = new URL(e.getAttribute("href"), n.baseURI);
-		if (!["http:", "https:"].includes(t.protocol)) throw Error("Unsupported link");
+	for (let e of o.querySelectorAll("a[href]")) try {
+		let t = e.getAttribute("href");
+		/^\/p\/MCO\d+\/?$/i.test(t) && e.setAttribute("href", "https://www.mercadolibre.com.co" + t);
+		let n = new URL(e.getAttribute("href"), r.baseURI);
+		if (!["http:", "https:"].includes(n.protocol)) throw Error("Unsupported link");
 		e.target = "_blank", e.rel = "noopener noreferrer";
 	} catch {
 		e.removeAttribute("href");
 	}
-	for (let e of a.querySelectorAll("table")) {
-		let t = n.createElement("div");
+	Af(o, r, n);
+	for (let e of o.querySelectorAll("table")) {
+		let t = r.createElement("div");
 		t.className = "report-table-scroll", t.setAttribute("role", "region"), t.setAttribute("aria-label", "Tabla del informe; desplázate horizontalmente para ver todas las columnas"), t.tabIndex = 0, e.replaceWith(t), t.append(e);
 	}
-	e.replaceChildren(a);
+	e.replaceChildren(o);
 }
-function Af(e) {
+function Mf(e) {
 	let t = [], n = /* @__PURE__ */ new Set();
-	for (let r of e.querySelectorAll("h3")) {
-		let e = r.nextElementSibling, i = null;
-		for (; e && !/^H[1-3]$/.test(e.tagName) && (i = [...e.querySelectorAll("a[href]")].find((e) => {
-			try {
-				let t = new URL(e.href);
-				return t.protocol !== "https:" || t.username || t.password || t.port ? !1 : [
-					"www.facebook.com",
-					"facebook.com",
-					"m.facebook.com"
-				].includes(t.hostname) ? /^\/marketplace\/item\/\d+\/?$/.test(t.pathname) : (t.hostname === "mercadolibre.com.co" || t.hostname.endsWith(".mercadolibre.com.co")) && (/\/MCO-?\d+/i.test(t.pathname) || /\/p\/MCO\d+/i.test(t.pathname));
-			} catch {
-				return !1;
+	for (let r of e.querySelectorAll("a[href]")) {
+		let i = kf(r.href);
+		if (!i || n.has(i.key)) continue;
+		n.add(i.key);
+		let a = r.closest("li,tr") || r.closest("p"), o = "";
+		if (a && [...a.querySelectorAll("a[href]")].filter((e) => kf(e.href)).length === 1) {
+			let e = a.cloneNode(!0);
+			e.querySelectorAll("a").forEach((e) => e.remove()), o = e.textContent.replace(/\s+/g, " ").trim(), /^(?:enlace|fuente|ver|publicaci[oó]n)\s*:?$/i.test(o) && (o = "");
+		}
+		if (!o) {
+			for (let t = a || r; t && t !== e && !o; t = t.parentElement) for (let e = t.previousElementSibling; e; e = e.previousElementSibling) if (/^H[1-6]$/.test(e.tagName)) {
+				o = e.textContent.trim();
+				break;
 			}
-		}), !i);) e = e.nextElementSibling;
-		if (i && !n.has(i.href) && (n.add(i.href), t.push({
-			title: r.textContent.trim().slice(0, 140),
-			url: i.href,
-			source: new URL(i.href).hostname.endsWith("mercadolibre.com.co") ? "Mercado Libre" : "Facebook Marketplace"
-		})), t.length === 6) break;
+		}
+		let s = r.textContent.trim();
+		!o && s && !/^https?:\/\//i.test(s) && (o = s), t.push({
+			title: (o || (i.kind === "catalogo" ? "Catálogo de Mercado Libre" : "Publicación en " + i.source)).slice(0, 140),
+			url: i.url,
+			source: i.source,
+			kind: i.kind
+		});
 	}
 	return t;
 }
 // src/progress.js
-function jf(e) {
+function Nf(e) {
 	let t = Math.max(0, Math.floor((Number.isFinite(e) ? e : 0) / 1e3)), n = Math.floor(t / 3600), r = Math.floor(t % 3600 / 60), i = t % 60;
 	return n ? `${n} h ${String(r).padStart(2, "0")} min` : r ? `${r} min ${String(i).padStart(2, "0")} s` : `${i} s`;
 }
-function Mf(e, t = Date.now()) {
+function Pf(e, t = Date.now()) {
 	let n = Array.isArray(e?.progress) ? e.progress.filter((e) => e && typeof e.text == "string") : [], r = n.at(-1) || null, i = ["ejecutando", "en cola"].includes(e?.status), a = Date.parse(e?.created || ""), o = null, s = 0, c = 0, l = null;
 	for (let e of n) {
 		let t = e.text.match(/^Marketplace:\s*(\d+)\s+anuncios encontrados en\s+(\d+)\s+pasadas?\./i), n = e.text.match(/^Marketplace:\s*(\d+)\s+anuncios encontrados;\s*(\d+)\s+desplazamientos?\./i);
@@ -15902,7 +15979,7 @@ function Mf(e, t = Date.now()) {
 	return e?.status === "en cola" ? d = "En espera" : /^Marketplace:.*en\s+\d+\s+pasadas?/i.test(u) ? d = "Recorriendo Marketplace" : /^Marketplace:.*desplazamientos?/i.test(u) ? d = "Recorrido completado" : /^Mercado Libre:|^Buscando en Mercado Libre:/i.test(u) ? d = "Consultando Mercado Libre" : /^Revisando Marketplace:/i.test(u) ? d = "Revisiones solicitadas" : /^Buscando en Marketplace:/i.test(u) ? d = "Consultas solicitadas" : /^(Buscando:|Revisando fuente:)/i.test(u) && (d = "Consultando fuentes públicas"), {
 		active: i,
 		phase: d,
-		elapsed: Number.isFinite(a) ? jf(t - a) : null,
+		elapsed: Number.isFinite(a) ? Nf(t - a) : null,
 		latest: r?.text || "",
 		latestAt: r?.at || null,
 		found: o?.found ?? null,
@@ -15914,10 +15991,10 @@ function Mf(e, t = Date.now()) {
 	};
 }
 window.RadarReport = {
-	render: kf,
-	highlights: Af
-}, window.RadarProgress = { derive: Mf };
-var Nf = Fo({
+	render: jf,
+	highlights: Mf
+}, window.RadarProgress = { derive: Pf };
+var Ff = Fo({
 	palette: { primary: { main: "#2968c8" } },
 	shape: { borderRadius: 8 },
 	typography: {
@@ -15927,7 +16004,7 @@ var Nf = Fo({
 			textTransform: "none"
 		}
 	}
-}), Pf = [
+}), If = [
 	{
 		slot: "slot-stepBack",
 		id: "stepBack",
@@ -15966,16 +16043,16 @@ var Nf = Fo({
 	children: t
 }), document.getElementById(e), e));
 (0, Xc.flushSync)(() => (0, Zc.createRoot)(document.getElementById("mui-root")).render(/* @__PURE__ */ (0, R.jsx)(Yc, {
-	theme: Nf,
-	children: Pf
+	theme: Ff,
+	children: If
 })));
-var Ff = {
+var Lf = {
 	search: "M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 14 15.5l.27.28v.79l5 4.99L20.49 20zm-5 0A4.5 4.5 0 1 1 15 9.5a4.5 4.5 0 0 1-4.5 4.5",
 	mercado: "M4 4h16v3H4zm1 4h14l1 4v2h-1v7h-5v-5h-4v5H5v-7H4v-2zm2 5v6h1v-5h8v5h1v-6z",
 	history: "M13 3a9 9 0 0 0-9 9H1l3.9 3.9.1.2L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z",
 	facebook: "M13.5 22v-9h3l.5-3h-3.5V8c0-.9.3-1.5 1.6-1.5H17V3.8c-.4-.1-1.3-.2-2.4-.2-2.4 0-4.1 1.5-4.1 4.2V10H8v3h2.5v9z"
 };
-function If() {
+function Rf() {
 	let [e, t] = (0, O.useState)("search");
 	return /* @__PURE__ */ (0, R.jsxs)(kc, {
 		showLabels: !0,
@@ -15988,28 +16065,28 @@ function If() {
 			/* @__PURE__ */ (0, R.jsx)(Hc, {
 				label: "Buscar",
 				value: "search",
-				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Ff.search }) })
+				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Lf.search }) })
 			}),
 			/* @__PURE__ */ (0, R.jsx)(Hc, {
 				label: "Historial",
 				value: "history",
-				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Ff.history }) })
+				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Lf.history }) })
 			}),
 			/* @__PURE__ */ (0, R.jsx)(Hc, {
 				label: "Facebook",
 				value: "facebook",
-				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Ff.facebook }) })
+				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Lf.facebook }) })
 			}),
 			/* @__PURE__ */ (0, R.jsx)(Hc, {
 				label: "Mercado",
 				"aria-label": "Mercado Libre",
 				value: "mercadolibre",
-				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Ff.mercado }) })
+				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Lf.mercado }) })
 			})
 		]
 	});
 }
 (0, Xc.flushSync)(() => (0, Zc.createRoot)(document.getElementById("mobileNav")).render(/* @__PURE__ */ (0, R.jsx)(Yc, {
-	theme: Nf,
-	children: /* @__PURE__ */ (0, R.jsx)(If, {})
+	theme: Ff,
+	children: /* @__PURE__ */ (0, R.jsx)(Rf, {})
 })));

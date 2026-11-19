@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 import {deriveProgress} from '../src/progress.js';
+import {renderReport,extractHighlights} from '../src/report.js';
 const dist=new URL('../../dist/',import.meta.url);
 const [html,wizard,jobsScript]=await Promise.all(['index.html','wizard.js','jobs.js'].map(x=>readFile(new URL(x,dist),'utf8')));
 const first={id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',prompt:'Busca oportunidades de apartamento en Facebook Marketplace',status:'completada',created:'2026-11-16T12:00:00Z',progress:[],report:'Informe guardado'};
@@ -11,10 +12,15 @@ function setup(url,records,settings={theme:null}){
  const dom=new JSDOM(html,{url,runScripts:'outside-only'}),w=dom.window;
  w.HTMLElement.prototype.scrollIntoView=function(){};
  for(const id of ['stepBack','stepNext','startTask','browserClose']){const b=w.document.createElement('button');b.id=id;w.document.getElementById('slot-'+id).append(b)}
- w.RadarReport={render:(root,text)=>root.textContent=text,highlights:()=>[]};w.RadarProgress={derive:deriveProgress};
+ w.RadarReport=settings.radarReport||{render:(root,text)=>root.textContent=text,highlights:()=>[]};w.RadarProgress={derive:deriveProgress};
  w.fetch=async (path,options={})=>{let data,status=200;if(path==='/api/preferences'){if(options.method==='PUT')settings.theme=JSON.parse(options.body).theme;const snapshot=settings.theme;if(!options.method&&settings.delay)await settings.delay;data={theme:snapshot}}else if(path==='/api/status')data=settings.status||{authenticated:true,configured:true,secureControl:true};else if(path==='/api/facebook/status')data={available:true,savedSession:true};else if(path==='/api/mercadolibre/status')data=settings.mercadoStatus||{available:true,savedSession:false};else if(path==='/api/jobs'){if(options.method==='POST'){settings.createdPrompt=JSON.parse(options.body).prompt;const job={...first,id:'cccccccc-cccc-cccc-cccc-cccccccccccc',prompt:settings.createdPrompt,status:'en cola'};records.unshift(job);data={id:job.id}}else data={jobs:records}}else if(path.endsWith('/cancel')){settings.cancelRequested=true;data={ok:true}}else if(path.startsWith('/api/jobs/')){const id=path.split('/').pop();data=records.find(x=>x.id===id);if(settings.jobDelays?.[id])await settings.jobDelays[id];if(!data){data={error:'No se encontró'};status=404}}else throw Error('Ruta inesperada '+path);return {ok:status===200,status,json:async()=>data}};
  w.eval(wizard);w.eval(jobsScript);return dom;
 }
+test('permite ver todas las publicaciones de un informe con listas',async()=>{
+ const report=Array.from({length:8},(_,i)=>`- Mac mini ${i}: https://www.facebook.com/marketplace/item/${100000+i}/`).join('\n');
+ const settings={radarReport:{render:renderReport,highlights:extractHighlights}},dom=setup('http://radar.test/?job='+first.id,[{...first,report}],settings),d=dom.window.document;
+ try{await waitFor(()=>d.querySelectorAll('#reportHighlights a').length===8);assert.equal([...d.querySelectorAll('.highlight-card')].filter(x=>!x.hidden).length,6);const show=d.querySelector('#showAllPublications');assert.match(show.textContent,/8/);show.click();assert.equal([...d.querySelectorAll('.highlight-card')].filter(x=>!x.hidden).length,8);assert.equal(show.getAttribute('aria-expanded'),'true');show.click();assert.equal([...d.querySelectorAll('.highlight-card')].filter(x=>!x.hidden).length,6)}finally{dom.window.close()}
+});
 test('muestra la sesión guardada de Mercado Libre y la actualiza al volver a la aplicación',async()=>{
  const settings={mercadoStatus:{available:true,savedSession:true}},dom=setup('http://radar.test/',[],settings),d=dom.window.document;
  try{await waitFor(()=>d.querySelector('#mercadoLabel')?.textContent.includes('sesión guardada'));assert.match(d.querySelector('#mercadoWizardStatus').textContent,/sesión guardada/i);settings.mercadoStatus={available:false,savedSession:false};dom.window.dispatchEvent(new dom.window.Event('focus'));await waitFor(()=>d.querySelector('#mercadoStatus').textContent.includes('No se pudo comprobar'));assert.doesNotMatch(d.querySelector('#mercadoLabel').textContent,/sesión guardada/i)}finally{dom.window.close()}
