@@ -1,0 +1,43 @@
+services:
+  radar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8097"
+    volumes:
+      - type: volume
+        source: radar-data
+        target: /data
+      - type: bind
+        source: ${RADAR_KEY_PATH:-/var/lib/radar/opencode.key}
+        target: /run/secrets/opencode_key
+        read_only: true
+    depends_on:
+      - facebook-browser
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8097/api/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  facebook-browser:
+    build:
+      context: ./browser
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    shm_size: 512mb
+    volumes:
+      - type: volume
+        source: facebook-profile
+        target: /profile
+
+volumes:
+  radar-data:
+    external: true
+    name: ${RADAR_DATA_VOLUME:-radar-coolify-data}
+  facebook-profile:
+    external: true
+    name: ${RADAR_FACEBOOK_VOLUME:-radar-coolify-facebook-profile}

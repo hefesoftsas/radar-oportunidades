@@ -29,7 +29,7 @@ docker compose build
 docker compose up -d
 ```
 
-También se puede provisionar la red, los volúmenes persistentes y los contenedores con [OpenTofu](infra/README.md).
+También se puede provisionar la red, los volúmenes persistentes y los contenedores con [OpenTofu](infra/README.md). Para un despliegue Git con Coolify, usa `compose.coolify.yaml`; crea primero los volúmenes Docker externos y el archivo privado de credencial. Configura el proxy para el puerto interno 8097 y utiliza HTTPS con autenticación inicial ya configurada.
 
 Para consultar Facebook, la persona usuaria inicia sesión directamente en el navegador aislado de la aplicación; Radar no necesita recibir la contraseña de Facebook. La sesión y el radio de búsqueda dependen de la configuración de Facebook. El acceso remoto debe mantenerse en una red privada y protegida. Consulta [MARKETPLACE.md](MARKETPLACE.md) para más detalles.
 
