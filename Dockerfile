@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:22-trixie-slim
 WORKDIR /app
 ENV NODE_ENV=production PORT=8096 RADAR_DATA=/data OPENCODE_KEY_FILE=/run/secrets/opencode_key
 COPY package.json package-lock.json ./
