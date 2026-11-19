@@ -1,5 +1,5 @@
-FROM node:22-trixie-slim
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chromium xvfb x11vnc novnc websockify socat fonts-liberation ca-certificates util-linux && rm -rf /var/lib/apt/lists/*
+FROM alpine:3.24
+RUN apk add --no-cache ca-certificates chromium flock font-liberation novnc socat x11vnc xvfb
 COPY start.sh /start-browser.sh
 COPY launch-profile.sh /launch-profile.sh
 RUN chmod 755 /start-browser.sh /launch-profile.sh
