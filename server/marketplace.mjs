@@ -3,6 +3,7 @@ import {lookup} from 'node:dns/promises';
 import {collectMarketplaceListings,marketplaceScanLimit} from './marketplace-collector.mjs';
 import {buildMarketplaceSearchUrl,validateItemUrl,parseListingText,browserCdpAddress,facebookSessionStatus} from './marketplace-utils.mjs';
 import {withAgent} from './browser-lock.mjs';
+import {focusBrowserSource,fetchMercadoLibrePage} from './browser-sources.mjs';
 let browser, connecting;
 async function browserContext(){
   if(!browser||!browser.isConnected()){
@@ -18,6 +19,8 @@ export async function getFacebookStatus(){
   catch{return {available:false,savedSession:false}}
 }
 async function pageSession(fn){return withAgent(async()=>{let page;try{const context=await browserContext();page=await context.newPage();page.setDefaultTimeout(12000);return await fn(page);}catch(e){if(/ECONNREFUSED|connectOverCDP|ENOTFOUND|Target closed/i.test(e.message))throw Error('El navegador del NAS no está disponible.');throw e;}finally{if(page)await page.close().catch(()=>{})}})}
+export async function openBrowserSource(source){try{return await withAgent(async()=>focusBrowserSource(await browserContext(),source))}catch(e){if(/ECONNREFUSED|connectOverCDP|ENOTFOUND|Target closed/i.test(e.message))throw Error('No se pudo abrir el navegador. Inténtalo de nuevo en unos segundos.');throw e}}
+export async function searchMercadoLibreWithBrowser(url,options){return pageSession(page=>fetchMercadoLibrePage(page,url,options))}
 async function checkLogin(page){const u=page.url();if(/\/login|\/checkpoint/i.test(u)||await page.locator('input[type="password"]').count())throw Error('Facebook solicita iniciar sesión o verificar la cuenta. Abre la conexión protegida y complétalo personalmente.');}
 export async function searchMarketplace({query,location='',min,max,pages=45,signal,onProgress=()=>{}}){
   const url=buildMarketplaceSearchUrl({query,location,min,max});

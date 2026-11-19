@@ -10,3 +10,20 @@ test('no cuenta como página nueva una redirección a la primera',async()=>{
  let n=0;const fake=async(url)=>{n++;if(url.includes('_Desde_'))return new Response(null,{status:301,headers:{location:'https://listado.mercadolibre.com.co/mac-mini'}});return new Response(html,{status:200,headers:{'content-type':'text/html'}})};
  const result=await searchMercadoLibre({query:'mac mini',pages:3,fetcher:fake});assert.equal(result.paginas_leidas,1);assert.equal(result.motivo_parada,'paginacion_no_disponible');assert.equal(n,3);
 });
+test('detecta verificación y permite usar el navegador con sesión',async()=>{
+ const verify='https://www.mercadolibre.com.co/gz/account-verification?go=listing';
+ const fetcher=async()=>new Response(null,{status:302,headers:{location:verify}});
+ await assert.rejects(searchMercadoLibre({query:'mac mini',fetcher}),/verific|inicia sesi[oó]n/i);
+ let used=0;
+ const result=await searchMercadoLibre({query:'mac mini',pages:1,fetcher,browserFetcher:async url=>{used++;return {url,html}}});
+ assert.equal(used,1);assert.equal(result.publicaciones.length,2);assert.equal(result.paginas_leidas,1);
+});
+test('no trata la verificación del navegador como una búsqueda vacía',async()=>{
+ const fetcher=async()=>new Response(null,{status:302,headers:{location:'https://www.mercadolibre.com.co/gz/account-verification'}});
+ await assert.rejects(searchMercadoLibre({query:'mac mini',fetcher,browserFetcher:async()=>({url:'https://www.mercadolibre.com.co/gz/account-verification',html:'<title>Ingresa</title>'})}),/verific|inicia sesi[oó]n/i);
+});
+test('si Mercado Libre rechaza la consulta, prueba la sesión del navegador',async()=>{
+ const fetcher=async()=>new Response('forbidden',{status:403});
+ const result=await searchMercadoLibre({query:'mac mini',pages:1,fetcher,browserFetcher:async url=>({url,html})});
+ assert.equal(result.publicaciones.length,2);
+});

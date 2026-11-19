@@ -2,6 +2,15 @@ import * as cheerio from 'cheerio';
 
 const host = 'listado.mercadolibre.com.co';
 const allowedHost = value => value === 'mercadolibre.com.co' || value.endsWith('.mercadolibre.com.co');
+export function validateMercadoLibrePage(url) {
+  const parsed=new URL(url);
+  if(parsed.protocol!=='https:'||!allowedHost(parsed.hostname)||parsed.username||parsed.password||parsed.port)throw Error('Redirección fuera de Mercado Libre.');
+  if(/\/(?:gz\/account-verification|login|jms\/mco\/lgz)(?:\/|$)/i.test(parsed.pathname)) {
+    const error=Error('Mercado Libre solicita iniciar sesión o verificar la cuenta. Conecta Mercado Libre en Radar y completa la verificación allí.');
+    error.code='MELI_AUTH_REQUIRED';throw error;
+  }
+  return parsed;
+}
 export function buildMercadoLibreSearchUrl(query, page=1) {
   const value=String(query||'').trim();
   if(value.length<2 || value.length>160) throw Error('Indica un término de búsqueda de 2 a 160 caracteres.');
@@ -33,22 +42,25 @@ export function extractMercadoLibreListings(html) {
 async function getPage(url,{fetcher,signal}) {
   let current=url;
   for(let i=0;i<4;i++){
-    const parsed=new URL(current);if(parsed.protocol!=='https:'||!allowedHost(parsed.hostname)||parsed.username||parsed.password||parsed.port)throw Error('Redirección fuera de Mercado Libre.');
+    validateMercadoLibrePage(current);
     const signals=[AbortSignal.timeout(20000)];if(signal)signals.push(signal);
     const r=await fetcher(current,{signal:AbortSignal.any(signals),redirect:'manual',headers:{'user-agent':'Mozilla/5.0','accept':'text/html'}});
     if(r.status>=300&&r.status<400){const location=r.headers.get('location');if(!location)throw Error('Redirección inválida.');current=new URL(location,current).href;continue;}
-    if(!r.ok)throw Error(`Mercado Libre no permitió consultar la página (${r.status}).`);
+    if(!r.ok){const e=Error(`Mercado Libre no permitió consultar la página (${r.status}).`);if([401,403].includes(r.status))e.code='MELI_AUTH_REQUIRED';throw e;}
     if(!(r.headers.get('content-type')||'').includes('text/html'))throw Error('Mercado Libre devolvió un formato inesperado.');
     const html=await r.text();if(html.length>5000000)throw Error('La página de Mercado Libre es demasiado grande.');
     return {html,url:current};
   }
   throw Error('Demasiadas redirecciones en Mercado Libre.');
 }
-export async function searchMercadoLibre({query,pages=3,signal,onProgress=()=>{},fetcher=fetch}) {
+export async function searchMercadoLibre({query,pages=3,signal,onProgress=()=>{},fetcher=fetch,browserFetcher}) {
   const total=Math.max(1,Math.min(5,Math.floor(Number(pages)||3))),results=[],seen=new Set(),visited=new Set();let paginas=0,motivo='limite_paginas',error=null;
   for(let page=1;page<=total;page++){
     signal?.throwIfAborted();const url=buildMercadoLibreSearchUrl(query,page);let html;
-    try{html=await getPage(url,{fetcher,signal})}catch(e){if(signal?.aborted)throw e;if(!paginas)throw e;motivo='error_pagina';error=String(e.message).slice(0,200);break;}
+    try{
+      try{html=await getPage(url,{fetcher,signal})}
+      catch(e){if(e.code!=='MELI_AUTH_REQUIRED'||!browserFetcher)throw e;html=await browserFetcher(url,{signal});validateMercadoLibrePage(html.url)}
+    }catch(e){if(signal?.aborted)throw e;if(!paginas)throw e;motivo='error_pagina';error=String(e.message).slice(0,200);break;}
     if(visited.has(html.url)){motivo='paginacion_no_disponible';break;}visited.add(html.url);
     const rows=extractMercadoLibreListings(html.html);paginas++;let added=0;
     for(const row of rows){if(!seen.has(row.url)){seen.add(row.url);results.push(row);added++;}}

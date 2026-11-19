@@ -2,6 +2,8 @@
 
 Aplicación para investigar publicaciones y comparar precios en Facebook Marketplace, Mercado Libre Colombia y fuentes públicas. Permite iniciar investigaciones, seguir su avance y consultar los informes guardados.
 
+Si Mercado Libre solicita verificar la cuenta, abre «Conectar Mercado Libre» en el primer paso de la búsqueda e inicia sesión en la pantalla del sitio. La sesión queda en el perfil persistente del navegador; cierra la ventana de conexión al terminar. La disponibilidad de resultados depende de que Mercado Libre permita el acceso y las búsquedas no aplican filtros exactos de precio o ubicación.
+
 ## Requisitos
 
 - Node.js 22 y npm.
