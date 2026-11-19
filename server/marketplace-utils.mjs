@@ -11,3 +11,6 @@ export async function browserCdpAddress(endpoint, lookup) {
 export function facebookSessionStatus(cookies) {
   return {savedSession: ['c_user', 'xs'].every(name => cookies.some(cookie => cookie.name === name && cookie.value))};
 }
+export function mercadoLibreSessionStatus(cookies) {
+  return {savedSession: ['ssid', 'orguserid'].every(name => cookies.some(cookie => cookie.name === name && cookie.value))};
+}

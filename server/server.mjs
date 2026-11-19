@@ -1,6 +1,6 @@
 import {checkBasic,basicChallenge,verifyPassword} from './basic-auth.mjs';
 import {basicSetupPage} from './basic-setup.mjs';
-import {getFacebookStatus,openBrowserSource} from './marketplace.mjs';
+import {getFacebookStatus,getMercadoLibreStatus,openBrowserSource} from './marketplace.mjs';
 import http from 'node:http';import {readFileSync,mkdirSync} from 'node:fs';import {readFile} from 'node:fs/promises';import {join,extname} from 'node:path';import {randomBytes,scryptSync,timingSafeEqual,createHash,randomUUID} from 'node:crypto';import {DatabaseSync} from 'node:sqlite';import {runResearch} from './agent.mjs';import httpProxy from 'http-proxy';import {beginRemote,endRemote,browserState} from './browser-lock.mjs';
 const root=process.env.RADAR_ROOT||process.cwd(),data=process.env.RADAR_DATA||join(root,'data');mkdirSync(data,{recursive:true});
 if(process.env.OPENCODE_KEY_FILE){try{process.env.OPENCODE_API_KEY=readFileSync(process.env.OPENCODE_KEY_FILE,'utf8').trim()}catch{}}
@@ -20,6 +20,7 @@ if(!authenticated(req))return send(res,401,{error:'Inicia sesión para acceder a
 if(path==='/api/basic-setup'&&req.method==='POST'){if(!process.env.RADAR_BASIC_USER)return send(res,404,{error:'Ruta no encontrada.'});if(getSetting('basic_password'))return send(res,409,{error:'La contraseña adicional ya está configurada.'});const b=await readBody(req),pass=String(b.password||'');if(pass.length<8||pass.length>128)return send(res,400,{error:'La contraseña debe tener entre 8 y 128 caracteres.'});if(verifyPassword(pass,getSetting('password')))return send(res,400,{error:'Usa una contraseña distinta de la de Radar.'});const salt=randomBytes(16).toString('hex');db.prepare('INSERT INTO settings VALUES (?,?)').run('basic_password',salt+':'+scryptSync(pass,salt,32).toString('hex'));return send(res,200,{ok:true})}
 if(path==='/api/browser/open'&&req.method==='POST'){const b=await readBody(req);if(!['facebook','mercadolibre'].includes(b.source))return send(res,400,{error:'Fuente no válida.'});try{await openBrowserSource(b.source);return send(res,200,{ok:true})}catch(e){return send(res,503,{error:String(e.message||'No se pudo abrir el navegador.').slice(0,200)})}}
 if(path==='/api/facebook/status'&&req.method==='GET')return send(res,200,await getFacebookStatus());
+if(path==='/api/mercadolibre/status'&&req.method==='GET')return send(res,200,await getMercadoLibreStatus());
 if(path==='/api/preferences'&&req.method==='GET')return send(res,200,{theme:getSetting('ui_theme')||null});
 if(path==='/api/preferences'&&req.method==='PUT'){const body=await readBody(req);if(!['light','dark'].includes(body.theme))return send(res,400,{error:'Selecciona un tema claro u oscuro.'});db.prepare('INSERT INTO settings(k,v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run('ui_theme',body.theme);return send(res,200,{theme:body.theme})}
 

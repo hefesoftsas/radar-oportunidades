@@ -1,7 +1,7 @@
 import {chromium} from 'playwright-core';
 import {lookup} from 'node:dns/promises';
 import {collectMarketplaceListings,marketplaceScanLimit} from './marketplace-collector.mjs';
-import {buildMarketplaceSearchUrl,validateItemUrl,parseListingText,browserCdpAddress,facebookSessionStatus} from './marketplace-utils.mjs';
+import {buildMarketplaceSearchUrl,validateItemUrl,parseListingText,browserCdpAddress,facebookSessionStatus,mercadoLibreSessionStatus} from './marketplace-utils.mjs';
 import {withAgent} from './browser-lock.mjs';
 import {focusBrowserSource,fetchMercadoLibrePage} from './browser-sources.mjs';
 let browser, connecting;
@@ -16,6 +16,10 @@ async function browserContext(){
 }
 export async function getFacebookStatus(){
   try{return {available:true,...facebookSessionStatus(await (await browserContext()).cookies('https://www.facebook.com'))}}
+  catch{return {available:false,savedSession:false}}
+}
+export async function getMercadoLibreStatus(){
+  try{return {available:true,...mercadoLibreSessionStatus(await (await browserContext()).cookies('https://www.mercadolibre.com.co'))}}
   catch{return {available:false,savedSession:false}}
 }
 async function pageSession(fn){return withAgent(async()=>{let page;try{const context=await browserContext();page=await context.newPage();page.setDefaultTimeout(12000);return await fn(page);}catch(e){if(/ECONNREFUSED|connectOverCDP|ENOTFOUND|Target closed/i.test(e.message))throw Error('El navegador del NAS no está disponible.');throw e;}finally{if(page)await page.close().catch(()=>{})}})}
