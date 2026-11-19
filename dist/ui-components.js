@@ -15971,6 +15971,7 @@ var Nf = Fo({
 })));
 var Ff = {
 	search: "M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 14 15.5l.27.28v.79l5 4.99L20.49 20zm-5 0A4.5 4.5 0 1 1 15 9.5a4.5 4.5 0 0 1-4.5 4.5",
+	mercado: "M4 4h16v3H4zm1 4h14l1 4v2h-1v7h-5v-5h-4v5H5v-7H4v-2zm2 5v6h1v-5h8v5h1v-6z",
 	history: "M13 3a9 9 0 0 0-9 9H1l3.9 3.9.1.2L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z",
 	facebook: "M13.5 22v-9h3l.5-3h-3.5V8c0-.9.3-1.5 1.6-1.5H17V3.8c-.4-.1-1.3-.2-2.4-.2-2.4 0-4.1 1.5-4.1 4.2V10H8v3h2.5v9z"
 };
@@ -15998,6 +15999,12 @@ function If() {
 				label: "Facebook",
 				value: "facebook",
 				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Ff.facebook }) })
+			}),
+			/* @__PURE__ */ (0, R.jsx)(Hc, {
+				label: "Mercado",
+				"aria-label": "Mercado Libre",
+				value: "mercadolibre",
+				icon: /* @__PURE__ */ (0, R.jsx)(es, { children: /* @__PURE__ */ (0, R.jsx)("path", { d: Ff.mercado }) })
 			})
 		]
 	});

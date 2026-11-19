@@ -30,3 +30,4 @@ h1,h2,h3,legend,.brand strong{font-family:var(--heading)}
 @media(prefers-reduced-motion:reduce){.live-pulse{animation:none}}
 @media print{.live-progress{display:none!important}}
 .marketplace-connect{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}.marketplace-connect strong{font-size:14px}.marketplace-connect p{margin:4px 0 0;color:var(--muted);font-size:14px;line-height:1.5}.marketplace-connect .secondary-button{flex-shrink:0;min-height:44px}@media(max-width:600px){.marketplace-connect{align-items:stretch;flex-direction:column}.marketplace-connect .secondary-button{width:100%}}
+.connect-mercado{margin-top:8px}.mercado-mark{width:29px;height:29px;display:grid;place-items:center;background:#ffe600;color:#332d00;border-radius:5px;font:700 15px/1 system-ui}
