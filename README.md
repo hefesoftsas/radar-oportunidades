@@ -31,6 +31,8 @@ docker compose up -d
 
 También se puede provisionar la red, los volúmenes persistentes y los contenedores con [OpenTofu](infra/README.md). Para un despliegue Git con Coolify, usa `compose.coolify.yaml`; crea primero los volúmenes Docker externos y el archivo privado de credencial. Configura el proxy para el puerto interno 8097 y utiliza HTTPS con autenticación inicial ya configurada. En Coolify, un webhook firmado de GitHub puede desplegar automáticamente los cambios de la rama configurada. Los volúmenes externos conservan informes y perfil del navegador entre despliegues; un reinicio puede interrumpir una investigación en curso.
 
+Opcionalmente, después de crear la contraseña de Radar, configura `RADAR_BASIC_USER` en Coolify para activar HTTP Basic. Inicialmente se usa la contraseña de Radar; entra a la aplicación y visita `/basic-setup` para crear una contraseña independiente. Usa HTTPS para proteger ambas contraseñas en tránsito. La contraseña adicional se guarda como hash en el volumen persistente de Radar.
+
 Para consultar Facebook, la persona usuaria inicia sesión directamente en el navegador aislado de la aplicación; Radar no necesita recibir la contraseña de Facebook. La sesión y el radio de búsqueda dependen de la configuración de Facebook. El acceso remoto debe mantenerse en una red privada y protegida. Consulta [MARKETPLACE.md](MARKETPLACE.md) para más detalles.
 
 Los resultados dependen de la disponibilidad de los sitios. El informe distingue los anuncios encontrados en listados de los que pudo abrir individualmente; precios, estado y disponibilidad deben confirmarse.

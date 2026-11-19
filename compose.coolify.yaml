@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      RADAR_BASIC_USER: ${RADAR_BASIC_USER:-}
     restart: unless-stopped
     expose:
       - "8097"
