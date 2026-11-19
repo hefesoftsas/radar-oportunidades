@@ -17,7 +17,7 @@ test('el historial elimina solo la búsqueda seleccionada, con autorización y s
   const base=`http://127.0.0.1:${control}`;
   for(let i=0;i<100;i++){try{if((await fetch(base+'/api/status')).ok)break}catch{}await new Promise(r=>setTimeout(r,50))}
   const setup=await fetch(base+'/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:'temporary-test-password'})});
-  assert.equal(setup.status,200);
+  assert.equal(setup.status,200);assert.doesNotMatch(setup.headers.get('set-cookie'),/; Secure(?:;|$)/i);
   const cookie=setup.headers.get('set-cookie').split(';')[0];
   const db=new DatabaseSync(join(data,'radar.sqlite'));
   const add=db.prepare('INSERT INTO jobs(id,prompt,status,created,updated) VALUES(?,?,?,?,?)');
